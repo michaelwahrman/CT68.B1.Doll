@@ -1,0 +1,26 @@
+{
+  "name": "green",
+  "title": "Green velvet (caroler 2)",
+  "image": "../../ref/caroler_2.png",
+  "prompt": "Old cracked papier-mache caroler doll: wispy brown hair, dark brown glass eyes, a worn nose, a ruffled dark-green velvet bonnet, a long red ribbon, a green floral coat over a lace chemise, holding a dripping candle in a dark iron holder.",
+  "params": { "hair": "wispy", "hairColor": "#4a3524", "bonnetColor": "#2e4a30", "dressColor": "#2f4a33", "ribbonColor": "#b8301c", "holder": true, "dressRepeat": [3, 2], "height": 1.0 },
+  "face": {
+    "mouth": [-0.02, -0.585, 0.15], "nose": [-0.08, -0.33],
+    "mid": 546, "left": 445, "right": 645, "eyeY": 235, "chin": 408,
+    "eyes": [[481, 238, 30, 14], [612, 233, 28, 13]],
+    "skin": [600, 300, 12], "iris": "#2a1a10",
+    "bright": 1.0
+  },
+  "whiteBalance": [0.82, 0.95, 1.25],
+  "patches": {
+    "dress": [60, 780, 240, 960],
+    "sleeve": [120, 600, 260, 760],
+    "lace": [470, 520, 580, 620],
+    "bonnet": [150, 80, 280, 260],
+    "hair": [330, 130, 395, 300],
+    "ribbon": [290, 620, 365, 800],
+    "candle": [745, 620, 800, 840],
+    "holder": [690, 870, 860, 1000]
+  },
+  "bright": { "dress": 1.4, "sleeve": 1.4, "bonnet": 1.4, "hair": 1.3, "holder": 1.6 }
+}

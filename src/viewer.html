@@ -1,0 +1,676 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__VERSION__</title>
+<style>
+:root { --bg: #0d0a08; --panel: #1b1511ee; --ink: #eadfce; --dim: #a8987f; --acc: #f0a54a; --line: #3a2f25; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font: 13px/1.4 system-ui, sans-serif; overflow: hidden; }
+#view { position: fixed; inset: 0; }
+#panel { position: fixed; top: 10px; right: 10px; width: 340px; max-height: calc(100% - 20px); overflow: auto; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+h1 { font-size: 15px; margin: 0 0 2px; } h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--dim); margin: 12px 0 6px; }
+.sub { color: var(--dim); font-size: 12px; }
+.row { display: grid; grid-template-columns: 110px 1fr 46px; gap: 6px; align-items: center; margin: 4px 0; }
+.row input[type=range] { width: 100%; accent-color: var(--acc); }
+.row output { text-align: right; font-variant-numeric: tabular-nums; }
+button, select, input[type=number] { background: #2a211a; color: var(--ink); border: 1px solid var(--line); border-radius: 5px; padding: 4px 8px; font: inherit; }
+button:hover { border-color: var(--acc); } button.on { background: var(--acc); color: #1b1208; border-color: var(--acc); }
+button.rec.on { background: #d8402e; border-color: #d8402e; color: #fff; }
+.btns { display: flex; flex-wrap: wrap; gap: 6px; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th, td { text-align: left; padding: 3px 4px; border-bottom: 1px solid var(--line); } th { color: var(--dim); font-weight: 600; }
+td input[type=number] { width: 52px; padding: 2px 4px; }
+.status { display: flex; gap: 8px; align-items: center; }
+.nz { border: 1px solid var(--line); border-radius: 6px; padding: 5px 6px; margin: 5px 0; display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 4px 6px; align-items: center; }
+.nz.on { border-color: var(--acc); }
+.nz label { color: var(--dim); font-size: 11px; display: flex; gap: 4px; align-items: center; }
+.nz input[type=number] { width: 54px; padding: 2px 4px; } .nz select { padding: 2px 4px; min-width: 0; width: 100%; }
+.nz .nums { grid-column: 1 / -1; display: flex; gap: 10px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: #6b5a48; flex: none; } .dot.ok { background: #5fd17a; } .dot.hit { background: var(--acc); }
+#last { font-family: ui-monospace, monospace; font-size: 11px; color: var(--dim); min-height: 1.4em; }
+#names { position: fixed; left: 0; right: 360px; bottom: 62px;   /* B1: above the notices */
+  display: flex; justify-content: space-around; pointer-events: none; color: var(--dim); font-size: 12px; }
+#version { position: fixed; left: 10px; top: 8px; color: var(--dim); font-size: 12px; }
+#verName { color: var(--ink); font-weight: 600; }   /* A6: the version, shown for the onrender upload */
+/* B1: the no-audio and copyright notices, at the bottom of the picture, centred under the dolls. Page only: the MP4 recorder copies the canvas alone */
+#notices { position: fixed; left: 0; right: 360px; bottom: 12px; text-align: center; color: #d9d2ca; font-size: 15px; line-height: 1.5; pointer-events: none; text-shadow: 0 1px 3px #000; }
+body.nopanel #notices, body.nopanel #names { right: 0; }
+@media (max-width: 700px) { #panel { width: auto; left: 10px; top: auto; bottom: 64px; max-height: 50%; } #names { display: none; } #notices { right: 0; font-size: 13px; } }
+/* A5: the panel can be hidden (H), a frame-rate readout, and a recording badge that shows even with the panel hidden */
+body.nopanel #panel { display: none; }   /* B1: the doll names keep clear of the notices when the panel is hidden too */
+#showPanel { position: fixed; top: 10px; right: 10px; display: none; opacity: .55; } #showPanel:hover { opacity: 1; }
+body.nopanel #showPanel { display: block; }
+#hud { position: fixed; left: 10px; top: 28px; color: var(--dim); font: 12px ui-monospace, monospace; pointer-events: none; }
+#recBadge { position: fixed; left: 10px; top: 48px; display: none; color: #fff; background: #d8402ecc; border-radius: 4px; padding: 2px 8px; font-size: 12px; pointer-events: none; }
+#recBadge.on { display: block; }</style>
+</head>
+<body><!-- A6: the panel starts shown (A5 started hidden); H or Hide ✕ hides it -->
+<div id="view"></div>
+<div id="version"><span id="verName">__VERSION__</span> · three caroler dolls · drag to orbit, wheel to zoom · S sing, T talk, B blink, P spin, N noise, O blow out candles, [ ] flame level, R record, H hide panel, V start view</div>
+<div id="hud"></div>
+<div id="recBadge"></div>
+<div id="names"></div>
+<div id="notices"><div>There is no audio. This is intended as a background for live performance.</div><div>© 2026 Michael Wahrman. All rights reserved.</div></div>
+<button id="showPanel" title="Show the control panel (H)">☰ Controls</button>
+<div id="panel">
+  <div style="display:flex;justify-content:space-between;align-items:center"><h1>Caroler dolls</h1>
+    <span class="btns"><button id="viewReset" title="Back to the start camera view (V)">Start view</button><button id="hidePanel" title="Hide this panel; H or the ☰ button brings it back">Hide ✕</button></span></div>
+  <div class="sub">All three dolls are ganged: every control moves all of them.</div>
+
+  <h2>Controls</h2>
+  <div id="sliders"></div>
+  <div class="btns" style="margin-top:6px">
+    <button id="reset">Reset pose</button>
+    <button id="demo">Demo motion</button>
+  </div>
+
+  <h2>Perform</h2>
+  <div class="btns">
+    <button id="sing" title="The dolls sing: their mouths form words, with a slight sway and a slight turn of the head (S)">Sing</button>
+    <button id="talk" title="The dolls talk: quick, small mouth shapes in phrases, with small nods and glances (T)">Talk</button>
+    <button id="spin360" title="Each doll turns once round on her stand (P)">Spin 360°</button>
+  </div>
+  <div class="btns" style="margin-top:6px">
+    <button id="blinkOnce" title="One blink (B)">Blink</button>
+    <button id="autoBlink" class="on" title="Blink very occasionally, every 8 to 20 seconds">Auto blink: on</button>
+  </div>
+  <div class="sub" id="perfState" style="margin-top:4px">Sing, Talk, Spin and blinks add to the pose, so the sliders and MIDI still work while they run.</div>
+
+  <h2>Candles</h2><!-- A7 -->
+  <div class="btns">
+    <button id="blowOut" title="The flames flicker and go out, leaving the dolls in the dark; after a few seconds they light again (O)">Blow out candles</button>
+    <button id="relight" title="Light the candles now, without waiting">Light now</button>
+    <label title="How long the dolls stay in the dark, in seconds">Dark for <input type="number" id="darkSecs" step="0.5" min="0" max="60" value="4" style="width:58px"> s</label>
+  </div>
+  <div class="row"><label for="flameLevel" title="The size of the flames and how much light they give: 0 none, 1 normal, 3 three times the light ([ and ] step it)">Flame level</label><input type="range" id="flameLevel" min="0" max="3" step="0.05" value="1"><output id="flameLevelO">1.00</output></div>
+  <div class="sub" id="candleState">The candles are lit.</div>
+
+  <h2>Perlin noise</h2>
+  <div class="btns">
+    <button id="noise" title="Turn every enabled noise channel on or off together (N)">Noise: off</button>
+    <button id="nzAdd">+ Add channel</button>
+    <label title="Multiplies every channel's coordinate multiplier: 2 makes all the noise change twice as fast, 0.5 half as fast">All × <input type="number" id="nzAll" step="0.1" min="0" max="20" value="1" style="width:58px"></label>
+  </div>
+  <div id="nzList"></div>
+  <div class="sub">Each channel adds signed Perlin noise (−amplitude … +amplitude) to one part and axis. Octaves add finer detail, each at twice the frequency and half the size.
+    <b>Coord ×</b> is the multiplier on the noise's coordinate (time in seconds × Coord × All ×): larger values make the noise change more quickly, smaller ones more slowly. 1 is about one swing a second; 0.3 about one every three seconds. Changing it while running does not make the noise jump. All three dolls get the same noise.</div>
+
+  <h2>Hair</h2>
+  <div class="btns">
+    <label>Style <select id="hairStyle">
+      <option value="a6" selected>Back, 0.55 thick, curls 0.60 opacity, solid top (A6 default)</option>
+      <option value="thin">Back, thinner, solid (A4 default)</option>
+      <option value="full">Back, full thickness</option>
+      <option value="sheer">Back, semi-transparent</option>
+      <option value="a3">As in A3</option>
+      <option value="custom">Custom</option>
+    </select></label>
+  </div>
+  <div class="row"><label for="hairThick" title="How thick the curls and the cap of hair are">Thickness</label><input type="range" id="hairThick" min="0.3" max="1" step="0.05" value="0.55"><output id="hairThickO">0.55</output></div>
+  <div class="row"><label for="hairOp" title="The curls: 1 solid; lower is see-through (dithered here; opacity in Arnold). A6: the top of the head is always solid">Curl opacity</label><input type="range" id="hairOp" min="0.2" max="1" step="0.05" value="0.6"><output id="hairOpO">0.60</output></div>
+  <div class="sub">All A4 styles have the hairline set back under the bonnet and the curls behind the ears. Thickness and Curl opacity change the chosen style (it becomes Custom). A6: the opacity is the curls'; the hair on the top of the head is always solid.</div>
+
+  <h2>Record video</h2>
+  <div class="btns">
+    <button id="rec" class="rec" title="Record the 3D view to an .mp4 (R)">Record</button>
+    <label>Size <select id="recSize"><option value="1280">1280 wide</option><option value="1920" selected>1920 wide</option><option value="0">as on screen</option></select></label>
+  </div>
+  <div class="btns" style="margin-top:6px">
+    <label title="Every frame: the animation clock steps exactly 1/30 s per video frame and waits for the encoder, so no frame is missed and the video is smooth, even if the screen runs slower than real time while recording. Real time: as in A4, frames that cannot keep up are skipped.">Timing <select id="recMode"><option value="frame" selected>every frame (smooth)</option><option value="real">real time</option></select></label>  </div>
+  <div class="sub" id="recState" style="margin-top:4px">Records the dolls' part of the view at 30 frames a second (R starts and stops). When you stop, an H.264 .mp4 is saved to your downloads.</div>
+
+  <h2>Textures</h2>
+  <div class="btns">
+    <button id="texBtn" title="Switch every part between the doll textures and a UV test texture">Show UV test texture</button>
+  </div>
+  <div class="sub" id="texState" style="margin-top:4px">Showing: doll textures</div>
+
+  <h2>MIDI</h2>
+  <div class="status"><span class="dot" id="dot"></span><span id="midiState">MIDI not connected</span></div>
+  <div class="btns" style="margin:6px 0">
+    <button id="midiBtn">Connect MIDI</button>
+    <label>Channel <select id="chan"></select></label>
+  </div>
+  <div id="last"></div>
+  <table>
+    <thead><tr><th>Control</th><th>CC</th><th>0 → 127</th><th></th></tr></thead>
+    <tbody id="map"></tbody>
+  </table>
+  <div class="sub" style="margin-top:4px">Change a CC number, or press Learn and move a knob. The map is kept in this browser.</div>
+  <div class="btns" style="margin-top:6px"><button id="mapReset">Default map</button></div>
+
+  <h2>Export</h2>
+  <div class="btns">
+    <button id="assBtn">Download .ass (this pose)</button>
+    <button id="poseBtn">Save pose .json</button>
+  </div>
+  <div class="sub" style="margin-top:4px">The .ass names its textures relative to the CT68.B1.Doll folder: put it in exports\ and run kick from that folder. A7: the candle lights are exported at the flame level, and not at all while the candles are out.</div>
+</div>
+
+<script type="text/plain" id="src-core">__THREE_CORE__</script>
+<script type="text/plain" id="src-three">__THREE_MODULE__</script>
+<script type="text/plain" id="src-orbit">__ORBIT__</script>
+<script type="text/plain" id="src-rig">__RIG__</script>
+<script type="text/plain" id="src-ass">__ASS__</script>
+<script type="text/plain" id="src-rec">__REC__</script>
+<script type="text/plain" id="src-carolers">__CAROLERS__</script>
+<script type="application/json" id="dolls-data">__DOLLS__</script>
+<script type="module">
+// three.js r180, the rig, the exporter and every texture are embedded above, so this one file works offline from the disk
+const txt = id => document.getElementById(id).textContent;
+const url = s => URL.createObjectURL(new Blob([s], { type: 'text/javascript' }));
+const coreURL = url(txt('src-core'));
+const threeURL = url(txt('src-three').split("from './three.core.js'").join(`from '${coreURL}'`));
+const withThree = s => s.split("from 'three'").join(`from '${threeURL}'`);
+const THREE = await import(threeURL);
+const { OrbitControls } = await import(url(withThree(txt('src-orbit'))));
+const rigURL = url(txt('src-rig'));
+const { buildDoll, placeDoll, CONTROLS, REST_POSE, OFFSETS, makeUVCanvas, VERSION } = await import(rigURL);
+// A7: the candles, the performance (sing, talk, spin, blink), the noise and the MIDI defaults, shared with the embed (src/carolers.js)
+const { Candles, Performer, TRIGGERS, LEVELS, perlin1, fbm, SONG, TALK } = await import(url(txt('src-carolers').split("from './doll_rig.js'").join(`from '${rigURL}'`)));
+document.title = VERSION; document.getElementById('verName').textContent = VERSION;   // A6: the version is set in src/doll_rig.js
+const { toASS } = await import(url(txt('src-ass')));
+const { Recorder } = await import(url(txt('src-rec')));
+const DOLLS = JSON.parse(txt('dolls-data'));
+const $ = id => document.getElementById(id);
+
+// ---------------- scene ----------------
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1;
+$('view').appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#0d0a08');
+scene.fog = new THREE.Fog('#0d0a08', 4, 9);   // A7: resize() moves it out with the start view's distance
+const camera = new THREE.PerspectiveCamera(32, 1, 0.02, 50);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+// A5: the start view (Michael's proposed start position): from the front left, a little above, further back, so the
+// row of dolls runs away diagonally with the green doll nearest. AZ is degrees round from the front toward the
+// dolls' left (−x); EL degrees above level; DIST multiplies the distance that just fits the three dolls in.
+// A7: dist 1.6 (A5/A6: 1.15), the dolls about 40% further away, so they look more like dolls
+const START = { az: 40, el: 13, dist: 1.6, target: [0.2, 0.52, 0] };
+let fitDist = true;   // the start view sets its own distance on every resize until the user zooms or orbits
+function startView() {
+  controls.target.set(...START.target);
+  const a = START.az * Math.PI / 180, e = START.el * Math.PI / 180;
+  camera.position.set(-Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e)).add(controls.target);
+  fitDist = true;
+  if (typeof resize === 'function') resize();
+  controls.update();
+}
+controls.addEventListener('start', () => { fitDist = false; });
+
+const hemi = new THREE.HemisphereLight('#5d5560', '#1a120c', 0.7); scene.add(hemi);
+const key = new THREE.SpotLight('#ffd9b0', 9, 0, 0.6, 0.6, 1.2);
+key.position.set(-2.2, 3, 3); key.target.position.set(0, 0.5, 0);
+key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0004;
+scene.add(key, key.target);
+const rim = new THREE.DirectionalLight('#8aa0c8', 0.6); rim.position.set(2, 2, -3); scene.add(rim);
+// A7: the room's lights, dimmed with the candles when they are blown out
+const roomLights = [hemi, key, rim].map(l => ({ l, full: l.intensity }));
+const floor = new THREE.Mesh(new THREE.CircleGeometry(6, 64), new THREE.MeshStandardMaterial({ color: '#1d1510', roughness: 0.9 }));
+floor.rotation.x = -Math.PI / 2; floor.position.y = -0.028; floor.receiveShadow = true; scene.add(floor);
+const back = new THREE.Mesh(new THREE.PlaneGeometry(12, 5), new THREE.MeshStandardMaterial({ color: '#241a14', roughness: 1 }));
+back.position.set(0, 2.4, -1.6); back.receiveShadow = true; scene.add(back);
+
+// ---------------- textures ----------------
+const loader = new THREE.TextureLoader();
+const loadTex = (src, color = true) => new Promise((res, rej) => loader.load(src, t => {
+  t.colorSpace = color ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; res(t);
+}, undefined, rej));
+const uvTex = new THREE.CanvasTexture(makeUVCanvas());
+uvTex.colorSpace = THREE.SRGBColorSpace; uvTex.wrapS = uvTex.wrapT = THREE.RepeatWrapping; uvTex.anisotropy = 8;
+
+// ---------------- the dolls ----------------
+const rigs = [];
+for (const [i, d] of DOLLS.entries()) {
+  const tx = {};
+  await Promise.all(Object.entries(d.data).map(async ([k, src]) => { tx[k] = await loadTex(src, k !== 'faceMask'); }));
+  const rig = buildDoll(THREE, d.doll, tx);
+  placeDoll(rig, i);
+  // remember each material's doll map, and make its UV-test map (the UV texture with no repeat)
+  for (const m of rig.materials) { m.userData.dollMap = m.map; m.userData.uvMap = uvTex; }
+  scene.add(rig.root);
+  rigs.push(rig);
+  const n = document.createElement('span'); n.textContent = d.doll.title; $('names').appendChild(n);
+}
+// A7: the candle lights (as before: one per doll, the middle one casts shadows), the flame level and the blow-out
+const candles = new Candles(THREE, rigs, { parent: scene });
+
+// ---------------- texture toggle ----------------
+let uvMode = false;
+function setUV(on) {
+  uvMode = on;
+  for (const r of rigs) for (const m of r.materials) {
+    m.map = on ? m.userData.uvMap : m.userData.dollMap;
+    m.color.set(on ? '#ffffff' : m.userData.color);
+    m.needsUpdate = true;
+  }
+  $('texBtn').textContent = on ? 'Show doll textures' : 'Show UV test texture';
+  $('texBtn').classList.toggle('on', on);
+  $('texState').textContent = 'Showing: ' + (on ? 'UV test texture (0..1 on every part; numbers are u,v)' : 'doll textures');
+}
+$('texBtn').onclick = () => setUV(!uvMode);
+
+// ---------------- controls: target values, smoothed toward ----------------
+const target = { ...REST_POSE }, current = { ...REST_POSE };
+const fmt = (c, v) => (c.unit === '°' ? Math.round(v) + '°' : v.toFixed(2));
+for (const c of CONTROLS) {
+  const row = document.createElement('div'); row.className = 'row';
+  row.innerHTML = `<label for="s_${c.key}" title="${c.note}">${c.label}</label><input type="range" id="s_${c.key}" min="${c.min}" max="${c.max}" step="${(c.max - c.min) / 254}" value="${c.def}"><output id="o_${c.key}">${fmt(c, c.def)}</output>`;
+  $('sliders').appendChild(row);
+  $(`s_${c.key}`).addEventListener('input', e => { demo = false; $('demo').classList.remove('on'); setTarget(c.key, +e.target.value, false); });
+}
+function setTarget(k, v, fromMidi) {
+  const c = CONTROLS.find(q => q.key === k);
+  target[k] = Math.max(c.min, Math.min(c.max, v));
+  $(`o_${k}`).textContent = fmt(c, target[k]);
+  if (fromMidi) $(`s_${k}`).value = target[k];
+}
+$('reset').onclick = () => { demo = false; $('demo').classList.remove('on'); for (const c of CONTROLS) setTarget(c.key, c.def, true); };
+let demo = false;
+$('demo').onclick = () => { demo = !demo; $('demo').classList.toggle('on', demo); };
+
+// ---------------- MIDI ----------------
+const MAP_KEY = 'ct68.a7.doll.midimap';
+// buttons on MIDI (TRIGGERS) and A7's flame level (LEVELS): their default CCs are in src/carolers.js
+const defMap = () => Object.fromEntries([...CONTROLS, ...LEVELS, ...TRIGGERS].map(c => [c.key, c.cc]));
+let map = defMap(), channel = 'omni', learning = null;
+try { const s = JSON.parse(localStorage.getItem(MAP_KEY) || localStorage.getItem('ct68.a6.doll.midimap') || localStorage.getItem('ct68.a5.doll.midimap') || localStorage.getItem('ct68.a4.doll.midimap') || 'null'); if (s && s.map) { map = { ...map, ...s.map }; channel = s.channel || 'omni'; } } catch (e) {}
+const saveMap = () => { try { localStorage.setItem(MAP_KEY, JSON.stringify({ map, channel })); } catch (e) {} };
+const chanSel = $('chan');
+chanSel.innerHTML = '<option value="omni">All</option>' + Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('');
+chanSel.value = channel; chanSel.onchange = () => { channel = chanSel.value; saveMap(); };
+function drawMap() {
+  $('map').innerHTML = '';
+  for (const c of [...CONTROLS, ...LEVELS, ...TRIGGERS]) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td title="${c.note}">${c.label}</td><td><input type="number" min="0" max="127" value="${map[c.key]}" id="cc_${c.key}"></td>` +
+      `<td>${c.min !== undefined ? `${c.min}${c.unit} → ${c.max}${c.unit}` : 'button: ≥ 64 presses'}</td><td><button id="learn_${c.key}">Learn</button></td>`;
+    $('map').appendChild(tr);
+    $(`cc_${c.key}`).onchange = e => { map[c.key] = Math.max(0, Math.min(127, parseInt(e.target.value, 10) || 0)); saveMap(); };
+    $(`learn_${c.key}`).onclick = () => { learning = learning === c.key ? null : c.key; drawLearn(); };
+  }
+  drawLearn();
+}
+function drawLearn() { for (const c of [...CONTROLS, ...LEVELS, ...TRIGGERS]) { const b = $(`learn_${c.key}`); b.classList.toggle('on', learning === c.key); b.textContent = learning === c.key ? 'Move…' : 'Learn'; } }
+$('mapReset').onclick = () => { map = defMap(); learning = null; saveMap(); drawMap(); };
+drawMap();
+
+let hitTimer = 0;
+function onMIDI(ev) {
+  const [st, d1, d2] = ev.data;
+  const type = st & 0xf0, ch = (st & 0x0f) + 1;
+  if (type !== 0xb0) return;
+  if (channel !== 'omni' && +channel !== ch) return;
+  $('last').textContent = `last: channel ${ch}  CC ${d1} = ${d2}`;
+  $('dot').classList.add('hit'); clearTimeout(hitTimer); hitTimer = setTimeout(() => $('dot').classList.remove('hit'), 120);
+  if (learning) { map[learning] = d1; learning = null; saveMap(); drawMap(); return; }
+  for (const c of CONTROLS) if (map[c.key] === d1) {
+    demo = false; $('demo').classList.remove('on');
+    setTarget(c.key, c.min + (c.max - c.min) * d2 / 127, true);
+  }
+  if (map.flameLevel === d1) setFlameLevel(LEVELS[0].min + (LEVELS[0].max - LEVELS[0].min) * d2 / 127);   // A7
+  for (const c of TRIGGERS) if (map[c.key] === d1 && d2 >= 64 && !ccHigh[d1]) $(c.key).click();
+  ccHigh[d1] = d2 >= 64;
+}
+const ccHigh = {};
+window.dollMIDI = onMIDI; // so a test can send messages without a device: dollMIDI({ data: [0xb0, 20, 127] })
+let midiAccess = null;
+function attachInputs() {
+  const names = [];
+  for (const input of midiAccess.inputs.values()) { input.onmidimessage = onMIDI; names.push(input.name); }
+  $('midiState').textContent = names.length ? `Listening to ${names.join(', ')}` : 'MIDI on, but no input device found';
+  $('dot').classList.toggle('ok', names.length > 0);
+}
+async function connectMIDI() {
+  if (!navigator.requestMIDIAccess) { $('midiState').textContent = 'This browser has no Web MIDI. Use Chrome or Edge; the sliders still work.'; return; }
+  try {
+    midiAccess = await navigator.requestMIDIAccess();
+    attachInputs();
+    midiAccess.onstatechange = attachInputs;
+    $('midiBtn').textContent = 'Rescan MIDI';
+  } catch (e) { $('midiState').textContent = 'MIDI was refused: ' + String(e.message).replace(/\.+$/, '') + '. The sliders still work.'; }
+}
+$('midiBtn').onclick = connectMIDI;
+connectMIDI();
+
+// ---------------- export ----------------
+const download = (name, data, type) => {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data], { type })); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+};
+const stamp = () => new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '');
+$('assBtn').onclick = () => {
+  const name = `dolls_${stamp()}`;
+  const { text } = toASS(THREE, rigs, { name, header: `${VERSION} from the page, pose ${JSON.stringify(shown)}` + (Object.keys(noiseOff).length ? ` offsets ${JSON.stringify(noiseOff)}` : '') + ` hair ${JSON.stringify(hairNow)} flame level ${candles.exportLevel.toFixed(2)}`, uvTest: uvMode, version: VERSION, flameLevel: candles.exportLevel });
+  download(name + (uvMode ? '_uv' : '') + '.ass', text, 'text/plain');
+};
+$('poseBtn').onclick = () => download(`pose_${stamp()}.json`, JSON.stringify({ name: `pose_${stamp()}`, pose: shown, ...(Object.keys(noiseOff).length ? { offsets: noiseOff } : {}), hair: hairNow, flameLevel: +candles.exportLevel.toFixed(3) }, null, 2), 'application/json');
+
+// ---------------- loop ----------------
+function resize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h);
+  // on a wide window, centre the dolls in the part left of the panel
+  const pw = panelWidth();
+  camera.aspect = (w + pw) / h;
+  if (pw) camera.setViewOffset(w + pw, h, pw, 0, w, h); else camera.clearViewOffset();
+  camera.updateProjectionMatrix();
+  // back the camera off far enough that all three dolls (about 2.5 wide, 1.1 tall) fit the visible part
+  // A5: only for the start view; once you orbit or zoom, a resize keeps your distance
+  if (!fitDist || !w || !h) return;   // A7: a window of no size (a hidden tab) made the camera NaN for good
+  const t = Math.tan(camera.fov * Math.PI / 360), a = Math.max(0.3, (w - pw) / h);
+  const dist = START.dist * Math.max(1.35 / (a * t), 0.75 / t);
+  const dir = camera.position.clone().sub(controls.target).normalize();
+  camera.position.copy(controls.target).addScaledVector(dir, dist);
+  scene.fog.near = dist + 0.5; scene.fog.far = dist + 5.5;   // A7: the fog keeps its place behind the dolls (A6: 4, 9)
+}
+// A5: the panel's width while it is shown on a wide window, else 0
+const panelWidth = () => (innerWidth > 700 && !document.body.classList.contains('nopanel') ? $('panel').offsetWidth + 20 : 0);
+addEventListener('resize', resize);
+startView();
+// A5: hide and show the panel (H)
+function setPanel(show) { document.body.classList.toggle('nopanel', !show); resize(); }
+$('hidePanel').onclick = () => setPanel(false);
+$('showPanel').onclick = () => setPanel(true);
+$('viewReset').onclick = startView;
+// ---------------- perform: sing, talk, spin and blink ----------------
+// A7: the timelines and the performing are in src/carolers.js (Performer), shared with the embed
+const performer = new Performer();
+let simTime = 0;
+const eyeNow = { x: 0, y: 0 };
+const perf = performer.perf;
+const perfLabel = () => {
+  $('perfState').textContent = [performer.singing ? 'Singing.' : '', performer.talking ? 'Talking.' : '', performer.spinning ? 'Spinning.' : ''].join(' ').trim() ||
+    'Sing, Talk, Spin and blinks add to the pose, so the sliders and MIDI still work while they run.';
+};
+// Sing and Talk: starting one stops the other
+function setAct(kind, on) {
+  performer.now = simTime; performer.setAct(kind, on);
+  $('sing').classList.toggle('on', performer.singing); $('sing').textContent = performer.singing ? 'Stop singing' : 'Sing';
+  $('talk').classList.toggle('on', performer.talking); $('talk').textContent = performer.talking ? 'Stop talking' : 'Talk';
+  if (!on) for (const k of ['mouthOpen', 'mouthShape', 'sway']) setTarget(k, 0, true);
+  perfLabel();
+}
+const setSing = on => setAct('sing', on), setTalk = on => setAct('talk', on);
+$('sing').onclick = () => setSing(!performer.singing);
+$('talk').onclick = () => setTalk(!performer.talking);
+$('spin360').onclick = () => { performer.now = simTime; performer.spin(); $('spin360').classList.add('on'); perfLabel(); };
+const blink = () => { performer.now = simTime; performer.blink(); };
+$('blinkOnce').onclick = blink;
+function setAutoBlink(on) { performer.now = simTime; performer.setAutoBlink(on); $('autoBlink').classList.toggle('on', on); $('autoBlink').textContent = `Auto blink: ${on ? 'on' : 'off'}`; }
+$('autoBlink').onclick = () => setAutoBlink(!performer.autoBlink);
+setSing(true);   // A6: the dolls are singing when the page opens
+function perform(t) {
+  const tg = performer.update(t);
+  if (tg) for (const k in tg) setTarget(k, tg[k], true);
+  if (performer.spinEnded) { $('spin360').classList.remove('on'); perfLabel(); }
+}
+
+// ---------------- A7: candles: blow out, light again, flame level ----------------
+function setFlameLevel(v) {
+  const l = candles.setLevel(v);
+  $('flameLevel').value = l; $('flameLevelO').textContent = l.toFixed(2);
+  return l;
+}
+$('flameLevel').addEventListener('input', e => setFlameLevel(+e.target.value));
+function blowOut() {
+  candles.now = simTime;
+  let d = parseFloat($('darkSecs').value); if (!isFinite(d)) d = 4; d = Math.max(0, Math.min(60, d)); $('darkSecs').value = d;
+  candles.blowOut({ dark: d });
+}
+$('blowOut').onclick = blowOut;
+$('relight').onclick = () => candles.relight();
+const PHASE_TEXT = { lit: 'The candles are lit.', flicker: 'The flames are flickering…', dying: 'Going out…', dark: 'In the dark.', relight: 'Lighting again…' };
+let phaseShown = '';
+function candleUI() {
+  const ph = candles.phase;
+  if (ph === phaseShown) return; phaseShown = ph;
+  $('candleState').textContent = PHASE_TEXT[ph];
+  $('blowOut').classList.toggle('on', ph !== 'lit');
+}
+// ---------------- A3: Perlin noise channels ----------------
+// A7: perlin1 and fbm are in src/carolers.js
+const NZ_KEY = 'ct68.a7.doll.noise';
+const PART = Object.fromEntries(OFFSETS.map(p => [p.part, p]));
+let noiseOn = false, nzSeed = 1;
+const newChannel = (q = {}) => ({ on: true, part: 'head', axis: 'yaw', amp: 9, oct: 3, mult: 0.35, seed: nzSeed++, ...q });   // A5: stronger (A4: 5°, 0.3)
+let channels = [newChannel({ on: false })];
+try { const q = JSON.parse(localStorage.getItem(NZ_KEY) || localStorage.getItem('ct68.a6.doll.noise') || localStorage.getItem('ct68.a5.doll.noise') || 'null'); if (q && Array.isArray(q.channels)) { channels = q.channels.filter(c => PART[c.part]).map(c => newChannel(c)); noiseOn = !!q.noiseOn; } } catch (e) {}
+nzSeed = Math.max(nzSeed, ...channels.map(c => c.seed + 1));
+const nzFns = new Map();
+const nzFn = c => { if (!nzFns.has(c.seed)) nzFns.set(c.seed, perlin1(c.seed)); return nzFns.get(c.seed); };
+const saveNoise = () => { try { localStorage.setItem(NZ_KEY, JSON.stringify({ noiseOn, channels })); } catch (e) {} };
+function drawNoise() {
+  const list = $('nzList'); list.innerHTML = '';
+  channels.forEach((c, i) => {
+    const d = document.createElement('div'); d.className = 'nz' + (c.on && noiseOn ? ' on' : '');
+    const axes = PART[c.part].axes;
+    if (!axes.some(([k]) => k === c.axis)) c.axis = axes[0][0];
+    d.innerHTML = `<select title="Body part">${OFFSETS.map(p => `<option value="${p.part}"${p.part === c.part ? ' selected' : ''}>${p.label}</option>`).join('')}</select>` +
+      `<select title="Axis">${axes.map(([k, l]) => `<option value="${k}"${k === c.axis ? ' selected' : ''}>${l}</option>`).join('')}</select>` +
+      `<button title="Enable this channel" class="${c.on ? 'on' : ''}">${c.on ? 'On' : 'Off'}</button><button title="Remove this channel">×</button>` +
+      `<div class="nums"><label title="Amplitude, in degrees: the noise runs from −this to +this">Amp° <input type="number" step="0.5" min="0" max="90" value="${c.amp}"></label>` +
+      `<label title="Octaves: 1 is smooth; more add finer detail">Octaves <input type="number" step="1" min="1" max="8" value="${c.oct}"></label>` +
+      `<label title="Coordinate multiplier: the noise is read at time × this (× All ×). Larger changes more quickly, smaller more slowly">Coord × <input type="number" step="0.05" min="0" max="20" value="${c.mult}"></label></div>`;
+    const [selP, selA] = d.querySelectorAll('select'), [bOn, bDel] = d.querySelectorAll('button'), [iA, iO, iS] = d.querySelectorAll('input');
+    selP.onchange = () => { c.part = selP.value; c.axis = PART[c.part].axes[0][0]; saveNoise(); drawNoise(); };
+    selA.onchange = () => { c.axis = selA.value; saveNoise(); };
+    bOn.onclick = () => { c.on = !c.on; if (c.on && !noiseOn) setNoise(true); saveNoise(); drawNoise(); };
+    bDel.onclick = () => { channels.splice(i, 1); saveNoise(); drawNoise(); };
+    const num = (inp, k, lo, hi, int) => { inp.onchange = () => { let v = parseFloat(inp.value); if (!isFinite(v)) v = c[k]; v = Math.max(lo, Math.min(hi, int ? Math.round(v) : v)); c[k] = v; inp.value = v; saveNoise(); }; };
+    num(iA, 'amp', 0, 90); num(iO, 'oct', 1, 8, true); num(iS, 'mult', 0, 20);
+    list.appendChild(d);
+  });
+}
+function setNoise(on) { noiseOn = on; $('noise').classList.toggle('on', on); $('noise').textContent = `Noise: ${on ? 'on' : 'off'}`; saveNoise(); drawNoise(); }
+$('noise').onclick = () => setNoise(!noiseOn);
+$('nzAdd').onclick = () => { channels.push(newChannel()); if (!noiseOn) setNoise(true); else { saveNoise(); drawNoise(); } };
+setNoise(noiseOn);
+const noiseOff = {};
+// A4: each channel's noise coordinate advances by (seconds passed) × Coord × × All ×, so a bigger multiplier runs
+// along the noise faster, and changing it mid-way speeds it up or slows it down without a jump
+let nzAll = 1, nzLastT = null;
+const nzPhase = new Map();
+$('nzAll').onchange = e => { let v = parseFloat(e.target.value); if (!isFinite(v)) v = nzAll; nzAll = Math.max(0, Math.min(20, v)); e.target.value = nzAll; };
+function noiseAt(t) {
+  const dt = nzLastT === null ? 0 : Math.max(0, Math.min(0.1, t - nzLastT)); nzLastT = t;
+  for (const k in noiseOff) delete noiseOff[k];
+  for (const c of channels) {
+    const ph = (nzPhase.get(c.seed) || 0) + dt * c.mult * nzAll;
+    nzPhase.set(c.seed, ph);
+    if (!noiseOn || !c.on || !c.amp) continue;
+    const k = `${c.part}.${c.axis}`;
+    noiseOff[k] = (noiseOff[k] || 0) + c.amp * fbm(nzFn(c), ph, c.oct);
+  }
+}
+
+// ---------------- A4: hair style ----------------
+const HAIR = {
+  a6:    { line: 'back', thick: 0.55, opacity: 0.6 },   // A6: opacity is the curls'; the cap is solid
+  thin:{ line: 'back', thick: 0.6, opacity: 1 },
+  full:  { line: 'back', thick: 1, opacity: 1 },
+  sheer: { line: 'back', thick: 0.8, opacity: 0.55 },
+  a3:    { line: 'a3', thick: 1, opacity: 1 },
+};
+const HAIR_KEY = 'ct68.a7.doll.hair';
+let hairNow = { ...HAIR.a6 }, hairStyle = 'a6';
+function setHair(style, h) {
+  hairStyle = style; hairNow = { ...hairNow, ...(HAIR[style] || {}), ...(h || {}) };
+  for (const r of rigs) r.setHair(hairNow);
+  $('hairStyle').value = style;
+  $('hairThick').value = hairNow.thick; $('hairThickO').textContent = (+hairNow.thick).toFixed(2);
+  $('hairOp').value = hairNow.opacity; $('hairOpO').textContent = (+hairNow.opacity).toFixed(2);
+  try { localStorage.setItem(HAIR_KEY, JSON.stringify({ style, hair: hairNow })); } catch (e) {}
+}
+$('hairStyle').onchange = e => setHair(e.target.value);
+$('hairThick').oninput = e => setHair('custom', { thick: +e.target.value, line: hairNow.line });
+$('hairOp').oninput = e => setHair('custom', { opacity: +e.target.value });
+try { const q = JSON.parse(localStorage.getItem(HAIR_KEY) || 'null'); if (q && q.hair) setHair(q.style, q.hair); else setHair('a6'); } catch (e) { setHair('a6'); }
+
+// ---------------- record to .mp4 ----------------
+let rec = null, recBusy = false;
+function recordRegion() {
+  // the part of the canvas left of the panel (where the dolls are), in canvas pixels
+  const cv = renderer.domElement, r = cv.width / innerWidth;
+  return [0, 0, Math.floor((innerWidth - panelWidth()) * r), cv.height];
+}
+// A5: in 'every frame' mode the animation clock is stepped exactly 1/30 s per video frame (see loop below)
+let recEvery = false, recSim0 = 0, recWall0 = 0;
+async function startRec() {
+  if (rec || recBusy) return;
+  const [, , sw, sh] = recordRegion();
+  const want = +$('recSize').value || sw, sc = Math.min(1, want / sw) || 1;
+  recBusy = true;
+  try {
+    recEvery = $('recMode').value === 'frame';
+    rec = await Recorder.start({ width: Math.round(sw * sc), height: Math.round(sh * sc), fps: 30, allowDrop: !recEvery });
+    recSim0 = simClock; recWall0 = performance.now() / 1000;
+  } catch (e) {
+    $('recState').textContent = 'Cannot record here: ' + e.message + '. Use a current Chrome or Edge.';
+    rec = null; return;
+  } finally { recBusy = false; }
+  $('rec').classList.add('on'); $('rec').textContent = 'Stop recording';
+  $('recBadge').classList.add('on');
+  $('recState').textContent = `Recording ${rec.width}×${rec.height}…`;
+}
+async function stopRec() {
+  if (!rec || recBusy) return;
+  const r = rec; rec = null; recBusy = true;
+  $('rec').classList.remove('on'); $('rec').textContent = 'Record';
+  $('recBadge').textContent = 'Encoding…';
+  $('recState').textContent = 'Encoding…';
+  try {
+    const blob = await r.stop();
+    const name = `${VERSION}_${stamp()}.mp4`;
+    window.dolls.lastRecording = { blob, name, frames: r.frames, dropped: r.dropped, width: r.width, height: r.height, codec: r.config.codec };
+    if (!window.dolls.noDownload) download(name, blob, 'video/mp4');
+    $('recState').textContent = `Saved ${name}: ${r.frames} frames (${(r.frames / 30).toFixed(1)} s), ${r.width}×${r.height}, ${(blob.size / 1e6).toFixed(1)} MB` + (r.dropped ? `, ${r.dropped} frames dropped` : '') + '.';
+  } catch (e) {
+    $('recState').textContent = 'Recording failed: ' + e.message;
+  } finally { recBusy = false; $('recBadge').classList.remove('on'); }
+}
+$('rec').onclick = () => (rec ? stopRec() : startRec());
+addEventListener('keydown', e => {
+  // A5: keys work while a slider, button or checkbox has focus (A4 ignored them after you touched a slider);
+  // only typing fields and menus keep their keys
+  const el = e.target;
+  if (el.closest && (el.closest('select, textarea') || (el.matches('input') && !/^(range|checkbox|button)$/.test(el.type)))) return;
+  if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+  if (el.matches && el.matches('input[type=range]')) el.blur();   // so the arrow keys etc. do not also move it
+  if (e.key === 'r' || e.key === 'R') $('rec').click();
+  else if (e.key === 'h' || e.key === 'H') setPanel(document.body.classList.contains('nopanel'));
+  else if (e.key === 'v' || e.key === 'V') startView();
+  else if (e.key === 's' || e.key === 'S') $('sing').click();
+  else if (e.key === 'p' || e.key === 'P') $('spin360').click();
+  else if (e.key === 't' || e.key === 'T') $('talk').click();
+  else if (e.key === 'b' || e.key === 'B') $('blinkOnce').click();
+  else if (e.key === 'n' || e.key === 'N') $('noise').click();
+  else if (e.key === 'o' || e.key === 'O') $('blowOut').click();          // A7
+  else if (e.key === '[') setFlameLevel(candles.level - 0.25);
+  else if (e.key === ']') setFlameLevel(candles.level + 0.25);
+});
+
+const shown = { ...REST_POSE };
+let last = 0, manual = false;
+function frame(t) {
+  const dt = Math.max(0, Math.min(0.1, t - last)); last = t; simTime = t;
+  if (demo) {
+    // A3: much gentler than A2's (which turned the head ±55°, raised the arm all the way and threw the eyes to the corners)
+    setTarget('headTurn', 14 * Math.sin(t * 0.35), true);
+    setTarget('headNod', 4 * Math.sin(t * 0.5 + 1), true);
+    setTarget('armRaise', 0.12 - 0.12 * Math.cos(t * 0.3), true);
+    setTarget('eyeX', 0.3 * Math.sin(t * 0.45 + 0.5), true);
+    setTarget('eyeY', 0.12 * Math.sin(t * 0.6 + 2), true);
+  }
+  perform(t);
+  noiseAt(t);
+  const k = 1 - Math.exp(-dt / 0.06);
+  for (const c of CONTROLS) current[c.key] += (target[c.key] - current[c.key]) * k;
+  // the glances: quick, but not instant
+  const ke = 1 - Math.exp(-dt / 0.05);
+  eyeNow.x += (perf.eyeX - eyeNow.x) * ke; eyeNow.y += (perf.eyeY - eyeNow.y) * ke;
+  for (const c of CONTROLS) {
+    let v = current[c.key] + (c.key === 'eyeX' ? eyeNow.x : c.key === 'eyeY' ? eyeNow.y : perf[c.key] || 0);
+    v = c.key === 'spin' ? ((v % 360) + 360) % 360 : Math.max(c.min, Math.min(c.max, v));
+    shown[c.key] = v;
+  }
+  for (const r of rigs) {
+    for (const q in r.offsets) delete r.offsets[q];
+    Object.assign(r.offsets, noiseOff);
+    r.setPose(shown);
+  }
+  // A7: the flames (flicker, level, blow-out) and their lights; the room dims with them
+  const lit = candles.update(t);
+  for (const { l, full } of roomLights) l.intensity = full * lit;
+  candleUI();
+  controls.update();
+  renderer.render(scene, camera);
+  if (rec) {
+    rec.add(renderer.domElement, t, recordRegion());
+    const msg = `${rec.seconds().toFixed(1)} s of video`;
+    $('recState').textContent = `Recording ${rec.width}×${rec.height}: ${msg}` + (recEvery ? ' (every frame)' : '') + (rec.dropped ? `, ${rec.dropped} dropped` : '');
+    $('recBadge').textContent = `● REC ${msg}`;
+  }
+}
+
+// ---------------- A5: the loop, the animation clock and the frame rate ----------------
+// simClock is the animation's own time. Normally it follows the wall clock. While recording in 'every frame' mode it
+// steps exactly 1/30 s per rendered frame, every frame goes to the encoder (waiting for it if it falls behind), and
+// the screen never runs faster than real time; if rendering or encoding is slow it runs slower than real time instead
+// of skipping frames, so the video is smooth.
+let simClock = 0, wallLast = null;
+const fpsWin = { n: 0, t0: performance.now(), fps: 0, ms: 0, worst: 0 };
+async function loop(now) {
+  if (manual) return;
+  await step(now);
+  requestAnimationFrame(loop);
+}
+// one turn of the loop at wall time `now` (ms); dolls.step(now) lets a test drive it without requestAnimationFrame
+async function step(now) {
+  const wall = now / 1000;
+  let t = null;
+  if (rec && recEvery) {
+    // after a slow stretch, do not race to catch up with the wall clock: carry on at real time from here
+    if (wall > recWall0 + (rec.frames + 1) / rec.fps) recWall0 = wall - rec.frames / rec.fps;
+    const due = recWall0 + rec.frames / rec.fps;          // when this frame is due, so it never runs faster than real time
+    if (wall + 0.004 >= due) t = recSim0 + rec.frames / rec.fps;
+  } else {
+    t = simClock + (wallLast === null ? 0 : Math.max(0, Math.min(0.1, wall - wallLast)));
+  }
+  wallLast = wall;
+  if (t !== null) {
+    simClock = t;
+    const r0 = performance.now();
+    frame(t);
+    countFrame(performance.now() - r0);
+    if (rec && recEvery) await rec.ready(4);
+  }
+}
+function countFrame(ms) {
+  const now = performance.now();
+  fpsWin.n++; fpsWin.worst = Math.max(fpsWin.worst, ms);
+  if (now - fpsWin.t0 >= 500) {
+    fpsWin.fps = fpsWin.n * 1000 / (now - fpsWin.t0); fpsWin.ms = (now - fpsWin.t0) / fpsWin.n;
+    let s = `${fpsWin.fps.toFixed(1)} fps · ${fpsWin.ms.toFixed(1)} ms/frame · render ${fpsWin.worst.toFixed(1)} ms max`;
+    if (rec && recEvery) s += ` · recording at ${(fpsWin.fps / rec.fps).toFixed(2)}× real time`;
+    $('hud').textContent = s;
+    fpsWin.n = 0; fpsWin.t0 = now; fpsWin.worst = 0;
+  }
+}
+requestAnimationFrame(loop);
+// for tests: dolls.renderAt(seconds) draws one frame at that time and stops the clock-driven loop
+window.dolls = { rigs, candles, performer, setFlameLevel, blowOut, roomLights, setUV, setTarget, target, current, shown, perf, THREE, scene, camera, controls, renderer, toASS, Recorder,
+  setSing, setTalk, blink, setAutoBlink, setNoise, get channels() { return channels; }, set channels(v) { channels = v.map(c => newChannel(c)); saveNoise(); drawNoise(); },
+  noiseOff, fbm, perlin1, setHair, get hairNow() { return hairNow; }, get autoBlink() { return performer.autoBlink; }, nzPhase, startRec, stopRec, get recording() { return rec; }, SONG, TALK, get demo() { return demo; }, set demo(v) { demo = v; $('demo').classList.toggle('on', v); },
+  renderAt(t) { manual = true; frame(t); }, startView, setPanel, START, step, get recWall0() { return recWall0; }, get fps() { return fpsWin.fps; }, get simClock() { return simClock; } };
+</script>
+</body>
+</html>

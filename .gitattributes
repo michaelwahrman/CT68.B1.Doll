@@ -1,0 +1,5 @@
+# Keep LF line endings (render_kick.sh runs in WSL; the .ass/.js files are generated with LF)
+* text=auto eol=lf
+*.jpg binary
+*.png binary
+*.webp binary

@@ -1,0 +1,56 @@
+{
+  "name": "cream",
+  "title": "Cream lace (caroler 3)",
+  "prompt": "Antique bisque caroler doll: auburn ringlets, blue-grey glass eyes, rosy cheeks, a floral and lace bonnet, a red paisley bow under the chin, a cream silk dress with lace bodice and cuffs, holding a white candle.",
+  "image": "../../ref/caroler_3.png",
+  "params": {
+    "hair": "ringlets",
+    "hairColor": "#8a5a36",
+    "bonnetColor": "#cdb79a",
+    "dressColor": "#e8dcc4",
+    "ribbonColor": "#a33a22",
+    "holder": false,
+    "dressRepeat": [
+      3,
+      2
+    ],
+    "height": 1.0
+  },
+  "skin": "#e49b7f",
+  "iris": "#6f8288",
+  "eyes": [
+    {
+      "x": -0.4048,
+      "y": 0.0724,
+      "w": 0.1742,
+      "h": 0.0886
+    },
+    {
+      "x": 0.4048,
+      "y": 0.0724,
+      "w": 0.1742,
+      "h": 0.0886
+    }
+  ],
+  "mouth": {
+    "x": 0.0,
+    "y": -0.503,
+    "w": 0.1
+  },
+  "nose": {
+    "x": 0.0,
+    "y": -0.27
+  },
+  "textures": {
+    "face": "tex/face.jpg",
+    "faceMask": "tex/face_mask.png",
+    "eye": "tex/eye.jpg",
+    "dress": "tex/dress.jpg",
+    "sleeve": "tex/sleeve.jpg",
+    "lace": "tex/lace.jpg",
+    "bonnet": "tex/bonnet.jpg",
+    "hair": "tex/hair.jpg",
+    "ribbon": "tex/ribbon.jpg",
+    "candle": "tex/candle.jpg"
+  }
+}

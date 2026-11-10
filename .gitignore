@@ -1,0 +1,9 @@
+# Large Arnold / OBJ exports: rebuild with `node doll_export.mjs` (or attach a zip to a GitHub Release)
+exports/*.ass
+exports/*.obj
+# Recordings made from the page
+*.mp4
+# Editor / OS clutter
+.DS_Store
+Thumbs.db
+node_modules/

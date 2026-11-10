@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CT68.B1.Doll</title>
+<style>
+:root { --bg:#fbf8f3; --ink:#2a211a; --dim:#6b5a48; --line:#e0d6c8; --code:#f1ebe2; --acc:#a85a14; }
+@media (prefers-color-scheme: dark) { :root { --bg:#14100c; --ink:#eadfce; --dim:#a8987f; --line:#3a2f25; --code:#221a14; --acc:#f0a54a; } }
+body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.55 system-ui, sans-serif; }
+main { max-width:860px; margin:0 auto; padding:24px 16px 60px; }
+h1 { font-size:28px; margin:0 0 12px; } h2 { font-size:20px; margin:32px 0 10px; border-bottom:1px solid var(--line); padding-bottom:4px; }
+h3 { font-size:16px; } a { color:var(--acc); }
+code { background:var(--code); padding:1px 4px; border-radius:4px; font:13px ui-monospace, Consolas, monospace; }
+pre { background:var(--code); padding:10px 12px; border-radius:6px; overflow:auto; } pre code { padding:0; background:none; }
+table { border-collapse:collapse; margin:10px 0; display:block; overflow-x:auto; } th, td { border:1px solid var(--line); padding:4px 8px; text-align:left; vertical-align:top; }
+th { background:var(--code); } li { margin:3px 0; }
+</style></head><body><main>
+<h1>CT68.B1.Doll</h1>
+<p>Three MIDI-controlled caroler dolls, made from the photographs in <code>C:\Users\micha\Downloads\claude\images\darkride\</code> (<code>caroler 2.webp</code>, <code>caroler 3.webp</code>, and a doll from <code>caroler 1</code>). They work in a browser (three.js / WebGL) and in Arnold (<code>.ass</code> for <code>kick</code>). All three answer the same controls and MIDI CCs and move together (ganged).</p>
+<p>B1 is a copy of CT68.A7.Doll, which is unchanged. B1 only adds two notices to the page: see "Changes from CT68.A7" below. The rest of this file is A7's.</p>
+<p>A7 is a copy of CT68.A6.Doll, which is unchanged. Everything from A1 to A6 still works. A7 moves the dolls further from the camera, adds a candle blow-out and a flame level, and makes the dolls easy to put in another three.js page, the Darkride.</p>
+<h2>Changes from CT68.A7</h2>
+<ul><li>
+<b>Renamed</b> from CT68.A7 to CT68.B1: the files, the version label (top left), the tab title, the <code>.ass</code> header and the embed bundle's header (<code>VERSION</code> in <code>src/doll_rig.js</code>).
+</li><li>
+<b>Two notices at the bottom of the picture, centred under the dolls, in clear light type (15 px)</b> (<code>#notices</code> in <code>src/viewer.html</code>):
+<ul><li>"There is no audio. This is intended as a background for live performance."</li><li>"© 2026 Michael Wahrman. All rights reserved." (as in CT65.A3.Locusts)</li></ul>
+</li><li>
+<b>Nothing overlaps them:</b> they sit in the picture, left of the panel (across the whole width when the panel is hidden), and the doll names are moved up above them. At phone width the panel sits above the notices.
+</li><li>
+<b>Not in the MP4:</b> the recorder copies only the 3D canvas. Like the label and the frame-rate readout, the notices are on the page but not in recordings.
+</li><li>
+<b>Not changed:</b> the embed bundle and <code>embed/example.html</code> have no notices. The saved settings keep A7's browser keys (<code>ct68.a7.doll.*</code>). <code>exports/</code> still holds A4's PNGs.
+</li><li>
+<b>Run:</b> the <code>ct68-b1</code> entry in <code>launch.json</code>, port 8789.
+</li></ul>
+<h2>What A7 changes</h2>
+<ol><li>
+<b>"The starting position should have the dolls somewhat further from the camera, perhaps at least another third. In this way, they look more doll like."</b>
+<ul><li>
+The start view is 1.6 times the distance that just fits the three dolls in (A5 and A6: 1.15). That is about 40% further away, a bit more than the third asked for.
+</li><li>
+The angle is unchanged: from the front left, a little above, the green doll nearest.
+</li><li>
+The fog now moves out with the start distance, so the dolls are not greyed by it.
+</li><li>
+<b>V</b> or <b>Start view</b> still goes back to this view.
+</li></ul>
+</li><li>
+<b>"There should be a button that causes the flames to flicker, then go out, putting the dolls in darkness. Then after a few seconds, the flames can reignite and return to their normal illumination."</b>
+<ul><li>
+<b>Blow out candles</b> (key <b>O</b>, MIDI CC 38) runs the sequence:
+<ul><li>
+<b>Flicker, about 1.6 s:</b> the flames gutter harder and harder, leaning and stretching.
+</li><li>
+<b>Going out, about 0.45 s:</b> the flames die down.
+</li><li>
+<b>In the dark, 4 s by default:</b> the room lights go down to 4%, so the dolls stand almost in black.
+</li><li>
+<b>Lighting again, about 1.3 s:</b> each flame catches, sputters, flares a little, and settles to normal.
+</li></ul>
+</li><li>
+Each doll's candle goes out and lights again a little after the one before (0.22 s), so they do not move in lockstep.
+</li><li>
+<b>Dark for … s</b> sets how long the dark lasts (0 to 60 s). <b>Light now</b> ends the dark at once.
+</li><li>
+The room's lights (the hemisphere, the key spot and the rim) dim and flicker with the candles.
+</li><li>
+The line under the buttons says what is happening: lit, flickering, going out, in the dark, lighting again.
+</li><li>
+The blow-out runs on the animation clock, so it records smoothly in "every frame" mode.
+</li></ul>
+</li><li>
+<b>"There should be a slider that allows the user to increase or decrease the illumination / size of the flames."</b>
+<ul><li>
+<b>Flame level</b>, from 0 to 3, with 1 as normal (key <b>[</b> steps it down by 0.25, <b>]</b> steps it up; MIDI CC 37).
+</li><li>
+The light from each candle grows in proportion to the level, and its reach grows with the square root of the level.
+</li><li>
+The flame's size grows with the square root of the level, so at 3 the flame is about 1.7 times as big. At 0 the flames and their light are gone.
+</li><li>
+The glow of the wax follows the level.
+</li><li>
+<b>Export:</b> <b>Download .ass</b> writes the candle lights at the flame level, and leaves out the flames and the candle lights while the candles are out. <b>Save pose .json</b> stores <code>flameLevel</code>, and <code>doll_export.mjs</code> reads it.
+</li></ul>
+</li><li>
+<b>"The three dolls will be included in another web browser, the Darkride, so whatever can be prepared to make that easy would be good."</b>
+<ul><li>
+**<code>embed/ct68_carolers.js</code>:** the dolls as one script for any three.js page.
+<ul><li>
+It is a classic <code>&lt;script&gt;</code>, like every file of the Darkride. It brings no three.js of its own: it uses the page's (<code>window.THREE</code>, or one you pass in).
+</li><li>
+The textures are packed in, so it works from the disk with no server.
+</li><li>
+<code>const carolers = await CT68Carolers.create(THREE, { roomLights: [yourLights] })</code>, then <code>scene.add(carolers.group)</code>, then <code>carolers.update(seconds)</code> every frame.
+</li></ul>
+</li><li>
+<b>The API:</b>
+<ul><li>
+<b>The pose:</b> <code>setPose</code>.
+</li><li>
+<b>The performance:</b> <code>sing</code>, <code>talk</code>, <code>spin360</code>, <code>blink</code>.
+</li><li>
+<b>The candles:</b> <code>blowOut</code>, <code>relight</code>, <code>setFlameLevel</code>, <code>roomLight</code>.
+</li><li>
+<b>MIDI:</b> <code>handleCC</code> and <code>handleMIDI</code> with the dolls' own CC map, or call the actions from the host's own MIDI layer.
+</li><li>
+<b>The rest:</b> the hair, the noise, events and <code>dispose</code>.
+</li></ul>
+</li><li>
+**<code>embed/example.html</code>:** a host scene of its own (a floor, its own lights, a box) with the dolls added, scaled and placed, with buttons and MIDI.
+</li><li>
+**<code>EMBED.md</code>:** how to put the dolls in the Darkride, with the whole API.
+</li><li>
+**<code>src/carolers.js</code>:** the same code as an ES module. The page uses it too. The candles, the singing and talking, the blinks, the noise and the MIDI defaults were moved into it from the page, so the page and the embed run the same code.
+</li></ul>
+</li><li>
+<b>Also:</b>
+<ul><li>
+**<code>index.html</code>** is built next to <code>dolls_midi.html</code> (the same page), for onrender and other web hosts.
+</li><li>
+<b>A fix:</b> a page opened in a hidden tab or a window of no size made the camera's position NaN for good, so nothing was drawn. It now waits for a real size. This bug was in A5 and A6 too.
+</li><li>
+<b>The label:</b> the version label and the tab title read <b>CT68.A7.Doll</b>. As in A6, the version is set once, in <code>VERSION</code> near the end of <code>src/doll_rig.js</code>.
+</li></ul>
+</li></ol>
+<p>The browser keeps its saved settings under new A7 keys. Your MIDI map and noise channels carry over from A6 (or A5), and the hair starts at the A6 default.</p>
+<h2>Run it</h2>
+<ul><li>
+<b>Browser:</b> double-click <code>C:\Users\micha\Downloads\claude\CT68.B1.Doll\index.html</code> (or <code>dolls_midi.html</code>, the same page) in Chrome or Edge. It is one self-contained file and works offline.
+<ul><li>
+Or run the <code>ct68-b1</code> entry in <code>C:\Users\micha\Downloads\claude\.claude\launch.json</code> (port 8789), and open <a href="http://127.0.0.1:8789/.">http://127.0.0.1:8789/.</a>
+</li></ul>
+</li><li>
+<b>Embed example:</b> start the same server and open <a href="http://127.0.0.1:8789/embed/example.html.">http://127.0.0.1:8789/embed/example.html.</a> The example loads three.js as an ES module, so it needs the server. The bundle itself does not.
+</li><li>
+<b>Keys:</b>
+<table><thead><tr><th>Key</th><th>Action</th></tr></thead><tbody><tr><td>S</td><td>sing</td></tr><tr><td>T</td><td>talk</td></tr><tr><td>B</td><td>blink</td></tr><tr><td>P</td><td>spin</td></tr><tr><td>N</td><td>noise</td></tr><tr><td>O</td><td>blow out candles (A7)</td></tr><tr><td>[ ]</td><td>flame level down / up (A7)</td></tr><tr><td>R</td><td>record</td></tr><tr><td>H</td><td>hide the panel</td></tr><tr><td>V</td><td>start view</td></tr></tbody></table>
+</li><li>
+**Rebuild after changing <code>src/</code>:** run <code>node build.mjs</code>. It writes <code>index.html</code>, <code>dolls_midi.html</code> and <code>embed/ct68_carolers.js</code>.
+</li><li>
+<b>Arnold:</b> run <code>node doll_export.mjs --out ..\CT68.B1.Doll_exports</code> (or with no <code>--out</code>, into <code>exports\</code>). Copy the files you want into <code>CT68.B1.Doll\exports\</code>, then run <code>kick -i exports/dolls_rest.ass</code> from the <code>CT68.B1.Doll</code> folder. Without a licence, add <code>-sl -set options.abort_on_license_fail false</code>.
+</li></ul>
+<h2>What's on the page</h2>
+<ul><li>
+<b>The three dolls, left to right:</b> Green velvet (caroler 2), Cream lace (caroler 3), Blonde patchwork (caroler 1).
+</li><li>
+<b>Controls:</b> one slider per control, ganged. <b>Reset pose</b> and <b>Demo motion</b> (a gentle, slow motion).
+</li><li>
+<b>Perform:</b>
+<ul><li>
+<b>Sing</b> (on at start) and <b>Talk</b>: the mouths form the words of a short carol or a short speech.
+</li><li>
+<b>Spin 360°</b>.
+</li><li>
+<b>Blink</b>, and <b>Auto blink</b> (very occasional: every 8 to 20 s).
+</li></ul>
+</li><li>
+<b>Candles (A7):</b> <b>Blow out candles</b>, <b>Light now</b>, <b>Dark for … s</b>, and the <b>Flame level</b> slider.
+</li><li>
+<b>Perlin noise:</b> channels of signed Perlin noise. Each channel has:
+<ul><li>
+a part and an axis;
+</li><li>
+an amplitude in degrees, octaves, and a coordinate multiplier.
+<p><b>All ×</b> speeds every channel up or slows it down.</p>
+</li></ul>
+</li><li>
+<b>Hair:</b> styles, thickness and curl opacity. The top of the head is always solid (A6).
+</li><li>
+<b>Record video:</b>
+<ul><li>
+An H.264 .mp4 of the dolls' part of the view, at 1280, 1920 or screen width.
+</li><li>
+Two timings: <b>every frame</b> (smooth: the clock steps 1/30 s a frame) or <b>real time</b>.
+</li></ul>
+</li><li>
+<b>Textures:</b> the doll textures, or the UV test texture.
+</li><li>
+<b>MIDI:</b>
+<ul><li>
+A device list, a channel filter and the last CC received.
+</li><li>
+The map, with <b>Learn</b>.
+</li><li>
+<b>Default map</b> puts the defaults below back.
+</li></ul>
+</li><li>
+<b>Export:</b> <b>Download .ass</b> of this pose, and <b>Save pose .json</b>.
+</li><li>
+<b>The label</b> (top left) <b>CT68.B1.Doll</b>, the key help, and a frame-rate readout.
+</li><li>
+<b>The notices</b> (bottom of the picture, B1): no audio, and the copyright.
+</li><li>
+<b>The panel</b> is shown at start. <b>H</b> or <b>Hide ✕</b> hides it, and <b>☰ Controls</b> brings it back.
+</li></ul>
+<h2>MIDI map (default)</h2>
+<p>All channels are accepted by default. A CC value of 0–127 is spread across the control's range. A "button" CC presses when it goes from below 64 to 64 or more.</p>
+<table><thead><tr><th>CC</th><th>Control</th><th>0 → 127</th></tr></thead><tbody><tr><td>20</td><td>Head turn</td><td>−70° (her right) → +70° (her left)</td></tr><tr><td>21</td><td>Head nod</td><td>−25° (down) → +25° (up)</td></tr><tr><td>22</td><td>Raise candle arm</td><td>0 (at her waist) → 1 (held high)</td></tr><tr><td>23</td><td>Eyes left/right</td><td>−1 → +1 (±30°)</td></tr><tr><td>24</td><td>Eyes up/down</td><td>−1 → +1 (±20°)</td></tr><tr><td>25</td><td>Mouth open</td><td>0 → 1</td></tr><tr><td>26</td><td>Mouth shape</td><td>−1 (rounded "oo") → +1 (wide "ee")</td></tr><tr><td>27</td><td>Body sway</td><td>−1 → +1 (±6°)</td></tr><tr><td>28</td><td>Spin</td><td>0° → 360°</td></tr><tr><td>32</td><td>Eyelids</td><td>0 (open) → 1 (closed)</td></tr><tr><td>37</td><td><b>Flame level (A7)</b></td><td>0 → 3 (1 is normal)</td></tr><tr><td>29</td><td>Sing (on/off)</td><td>button</td></tr><tr><td>30</td><td>Spin 360°</td><td>button</td></tr><tr><td>31</td><td>Record (on/off)</td><td>button (the page only)</td></tr><tr><td>33</td><td>Blink</td><td>button</td></tr><tr><td>34</td><td>Auto blink (on/off)</td><td>button</td></tr><tr><td>35</td><td>Talk (on/off)</td><td>button</td></tr><tr><td>36</td><td>Noise (on/off)</td><td>button</td></tr><tr><td>38</td><td><b>Blow out candles (A7)</b></td><td>button</td></tr></tbody></table>
+<p>The pose controls are in <code>CONTROLS</code> in <code>src/doll_rig.js</code>. The buttons and the flame level are in <code>TRIGGERS</code> and <code>LEVELS</code> in <code>src/carolers.js</code>.</p>
+<h2>How it is built</h2>
+<ul><li>
+**<code>src/doll_rig.js</code>** (A1 on) is the rig: one builder makes every doll from its <code>doll.json</code> and textures. It has the head, the face and mouth, the eyes and lids, the hair, the bonnet, the arms and hands, and the candle. It is shared by the page, the embed and the Node exporter, and imports nothing: THREE is passed in.
+</li><li>
+**<code>src/carolers.js</code>** (A7) holds what the page and an embedding page share:
+<ul><li>
+**<code>Candles</code>:** the candle lights, the flame level and the blow-out.
+</li><li>
+**<code>Performer</code>:** sing, talk, spin and blinks.
+</li><li>
+**<code>perlin1</code>, <code>fbm</code> and <code>NoiseMixer</code>:** the noise.
+</li><li>
+<b>The MIDI defaults.</b>
+</li><li>
+**<code>createCarolers()</code>:** all of it in one group.
+</li></ul>
+</li><li>
+**<code>src/viewer.html</code>** is the page. <code>build.mjs</code> packs three.js r180 (<code>lib/</code>), the rig, <code>carolers.js</code>, the exporter, the recorder and every texture (as data URLs) into it, so <code>index.html</code> works offline from the disk.
+</li><li>
+**<code>src/ass_export.js</code>** writes the posed dolls as an Arnold <code>.ass</code> (and OBJ). **<code>doll_export.mjs</code>** does it from Node for every pose in <code>poses/</code>.
+</li><li>
+**<code>src/mp4_record.js</code>** is the .mp4 recorder (WebCodecs, H.264).
+</li><li>
+**<code>tools/doll_textures.py</code>** (run it in WSL) turns each <code>dolls/&lt;name&gt;/spec.json</code> (a photograph, a prompt and its measurements) into the doll's <code>tex/</code> and <code>doll.json</code>. That is how a new doll is made without new code.
+</li><li>
+**<code>embed/ct68_carolers.js</code>** (A7, built) is the rig and <code>carolers.js</code> as one classic script, with the dolls' data packed in. **<code>embed/example.html</code>** is a host page.
+</li></ul>
+<h2>Tested</h2>
+<p><b>In the built-in browser, over http (port 8788), at 1600×900:</b></p>
+<ul><li>
+<b>The page:</b>
+<ul><li>
+It loads with no console errors.
+</li><li>
+The title and the label read <b>CT68.A7.Doll</b>.
+</li><li>
+The panel is shown, and the dolls are singing.
+</li><li>
+The dolls stand further back than in A6, with the fog behind them.
+</li></ul>
+</li><li>
+<b>Blow-out:</b> stepped through frame by frame at 30 frames a second:
+<ul><li>
+<b>Flicker:</b> the room light falls from 1 to about 0.65 as the flames gutter.
+</li><li>
+<b>Going out</b>, then <b>In the dark:</b> the room light is at 0.04, the candle lights are 0, and the flames are hidden. The screenshot is nearly black, with only faint shapes.
+</li><li>
+<b>Lighting again</b>, then <b>The candles are lit:</b> the room light and the candle lights are back to normal.
+</li><li>
+<b>Also tested:</b> the <b>O</b> key, MIDI CC 38 (through <code>dollMIDI</code>), and <b>Light now</b>.
+</li></ul>
+</li><li>
+<b>Flame level:</b>
+<ul><li>
+MIDI CC 37 at 127 set the level to 3 and moved the slider.
+</li><li>
+<b>[</b> stepped it to 2.5: the flames 1.6 times as big, the candle light 0.94 (normal is about 0.35), and its reach 3.95 (normal is 2.5).
+</li><li>
+The screenshot is visibly brighter round the candles.
+</li></ul>
+</li><li>
+<b>Earlier features still work:</b>
+<ul><li>
+<b>Sing:</b> the mouths move, and the status reads "Singing.".
+</li><li>
+<b>Talk:</b> the button reads "Stop talking", and the heads nod.
+</li><li>
+<b>Spin 360°:</b> turns, and ends at 0° with the button reset.
+</li><li>
+<b>Blink:</b> the lids close.
+</li><li>
+The MIDI map has 19 rows (the 10 pose controls, the flame level, and 8 buttons).
+</li></ul>
+</li><li>
+<b>.ass from the page:</b>
+<ul><li>
+<b>Lit:</b> 70 meshes and 3 candle lights; at flame level 2 their intensity is 0.5.
+</li><li>
+<b>Blown out:</b> 64 meshes (no flames) and no candle lights.
+</li></ul>
+</li><li>
+<b>The embed example</b> (<code>embed/example.html</code>):
+<ul><li>
+It loads the three dolls into a host scene with no console errors.
+</li><li>
+On blow-out the host's own spot light went from 14 to 0.56 (4%) and back.
+</li><li>
+The candle lights are in the dolls' group and scaled with it.
+</li><li>
+<code>CT68Carolers.create(options)</code> with a global <code>THREE</code> worked. <code>handleCC(20, 127)</code> turned the heads to 70°.
+</li><li>
+<code>dispose()</code> ran without errors.
+</li><li>
+<code>src/carolers.js</code> as an ES module, loading the dolls from <code>dolls/</code> with no options, worked too.
+</li></ul>
+</li><li>
+<b>Node:</b>
+<ul><li>
+<code>node build.mjs</code> built all three files.
+</li><li>
+The bundle loads in Node and defines <code>CT68Carolers</code>.
+</li><li>
+<code>node doll_export.mjs --out &lt;scratch&gt;</code> wrote every pose. The headers read CT68.A7.Doll, with 3 candle lights.
+</li></ul>
+</li></ul>
+<h2>Not tested</h2>
+<ul><li>
+**Opening <code>index.html</code> or the bundle from the disk (file://).** The built-in browser cannot open local files. The page is built the same way as A6's, which worked from the disk.
+</li><li>
+<b>Real-time playback speed.</b> The browser pane was in the background, so it ran at a few frames a second, and the timing was checked by stepping the clock.
+</li><li>
+<b>A real MIDI device.</b>
+</li><li>
+<b>Recording an .mp4 of a blow-out.</b>
+</li><li>
+<b>Kick renders.</b> The A7 exports were written to a scratch folder only. <code>CT68.A7.Doll_exports</code> was not made, and the PNGs in <code>exports/</code> are still A4's.
+</li><li>
+<b>The Darkride itself.</b> Nothing in CT61 was changed. <code>EMBED.md</code> says how to add the dolls.
+</li><li>
+<b>The onrender upload.</b>
+</li><li>
+<b>Git:</b> the A7 folder has no git repository, as with A6.
+</li></ul>
+<h2>Known limits</h2>
+<ul><li>
+With the candles out, the room is at 4%, not black, so the dolls' outlines can just be made out. <code>BLOWOUT.darkness</code> in <code>src/carolers.js</code> sets it.
+</li><li>
+The flame level changes only the candles' light, not the room's key light. The flames light the dolls up close, and the room light stays as it was.
+</li><li>
+The embed is about 1.6 MB, nearly all of it textures.
+</li></ul>
+<h2>Files (changes from A6)</h2>
+<ul><li>
+<b>New:</b>
+<ul><li>
+<code>src/carolers.js</code>
+</li><li>
+<code>embed/ct68_carolers.js</code> (built)
+</li><li>
+<code>embed/example.html</code>
+</li><li>
+<code>EMBED.md</code> and <code>EMBED.html</code>
+</li><li>
+<code>index.html</code> (built)
+</li><li>
+<code>CT68.A7.Doll.md</code> and <code>CT68.A7.Doll.html</code>
+</li></ul>
+</li><li>
+<b>Changed:</b>
+<ul><li>
+**<code>src/viewer.html</code>:** the start view, the fog, the Candles section, the keys, the MIDI rows, the NaN fix, and using <code>carolers.js</code>.
+</li><li>
+**<code>src/doll_rig.js</code>:** <code>VERSION</code>.
+</li><li>
+**<code>src/ass_export.js</code>:** the flame level, and hidden groups left out.
+</li><li>
+**<code>doll_export.mjs</code>:** <code>flameLevel</code> from the pose.
+</li><li>
+**<code>build.mjs</code>:** <code>index.html</code> and the bundle.
+</li></ul>
+</li><li>
+<b>Not copied:</b> <code>CT68.A6.Doll.md</code> (it stays in the A6 folder).
+</li></ul>
+<h2>Prompt log</h2>
+<p>The requests for each version, in short. A7's is in the user's words.</p>
+<ul><li>
+<b>A1:</b> three caroler dolls from the photographs, controlled by MIDI and ganged. Each turns her head, raises her candle arm and moves her eyes. A UV-texture toggle. Usable in the browser and in Arnold.
+</li><li>
+<b>A2:</b> mp4 recording, a 360° spin, singing, and a better nose and hands.
+</li><li>
+<b>A3:</b> gentler demo motion, blink, simpler singing, signed Perlin noise per body part and axis (amplitude, octaves), and talking.
+</li><li>
+<b>A4:</b> better arms, auto blink off by default, the hair pushed back, and a noise frequency multiplier.
+</li><li>
+<b>A5:</b>
+<ul><li>
+The hair at 0.55 thick and 0.60 opacity, and a new camera start position.
+</li><li>
+A slower blink, with an optional occasional auto blink.
+</li><li>
+Smooth recording that does not have to keep up with real time, and stronger default noise.
+</li><li>
+A right panel that can be hidden (and starts hidden, <b>H</b>), a record hotkey, and a frame-rate readout.
+</li></ul>
+</li><li>
+<b>A6:</b> the hair on top of the head kept opaque; the controls visible at start, with singing on; the version label in the display, for onrender.
+</li><li>
+<b>A7:</b>
+<ol><li>
+"The starting position should have the dolls somewhat further from the camera, perhaps at least another third. In this way, they look more doll like."
+</li><li>
+"There should be a button that causes the flames to flicker, then go out, putting the dolls in darkness. Then after a few seconds, the flames can reignite and return to their normal illumination."
+</li><li>
+"There should be a slider that allows the user to increase or decrease the illumination / size of the flames."
+</li><li>
+"The three dolls will be included in another web browser, the Darkride, so whatever can be prepared to make that easy would be good."
+<p>Also asked: keep all earlier behaviour, and show the version label "CT68.A7.Doll". For point 4, a module with a clear API, an embed example page and a short integration doc.</p>
+</li></ol>
+</li></ul>
+<p><b>House rules:</b></p>
+<ul><li>
+Each version is a new folder.
+</li><li>
+three.js is bundled locally, and assets use relative paths.
+</li><li>
+Deliver one .zip and a .md with full context; each .md has an .html twin.
+</li><li>
+Never take control of the user's desktop.
+</li><li>
+Ask before deleting files, and make minimal changes otherwise.
+</li></ul>
+</main></body></html>

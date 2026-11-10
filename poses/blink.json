@@ -1,0 +1,5 @@
+{
+  "name": "blink",
+  "pose": { "headTurn": -8, "headNod": 3, "armRaise": 0.1, "eyeX": 0, "eyeY": 0, "mouthOpen": 0.35, "mouthShape": 0.3, "sway": 0, "spin": 0, "blink": 1 },
+  "offsets": { "head.roll": 4 }
+}

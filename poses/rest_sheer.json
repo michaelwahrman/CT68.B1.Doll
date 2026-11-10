@@ -1,0 +1,5 @@
+{
+  "name": "rest_sheer",
+  "pose": { "headTurn": 0, "headNod": 0, "armRaise": 0, "eyeX": 0, "eyeY": 0, "mouthOpen": 0, "mouthShape": 0, "sway": 0, "spin": 0, "blink": 0 },
+  "hair": { "line": "back", "thick": 0.8, "opacity": 0.55 }
+}

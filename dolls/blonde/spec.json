@@ -1,0 +1,24 @@
+{
+  "name": "blonde",
+  "title": "Blonde patchwork (caroler 1)",
+  "image": "../../ref/caroler_1.png",
+  "prompt": "Bisque caroler doll with big amber-brown glass eyes, painted brows, fair curly hair, a gathered lace bonnet over a dark brim, a brown grosgrain bow, a faded patchwork dress with lace collar, holding a tall candle in a black iron candlestick.",
+  "params": { "hair": "curly", "hairColor": "#b48a5a", "bonnetColor": "#b07a48", "dressColor": "#9a6a4a", "ribbonColor": "#7a3a1e", "holder": true, "dressRepeat": [3, 2], "height": 1.0 },
+  "face": {
+    "mouth": [0.0, -0.49, 0.14], "nose": [0.0, -0.2],
+    "mid": 402, "left": 195, "right": 474, "eyeY": 1278, "chin": 1485,
+    "eyes": [[300, 1283, 44, 30], [433, 1272, 27, 26]],
+    "skin": [300, 1400, 14], "mirror": "left", "iris": "#7a4220",
+    "bright": 1.0
+  },
+  "patches": {
+    "dress": [60, 1620, 230, 1780],
+    "sleeve": [440, 1600, 580, 1720],
+    "lace": [100, 1560, 250, 1640],
+    "bonnet": [420, 1000, 560, 1080],
+    "hair": [60, 1350, 160, 1500],
+    "ribbon": [340, 1640, 420, 1780],
+    "candle": [665, 1160, 745, 1370],
+    "holder": [650, 1690, 760, 1790]
+  }
+}

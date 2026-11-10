@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CT68.B1.Doll embed example</title>
+<style>
+:root { --bg: #08070a; --ink: #eadfce; --dim: #a8987f; --acc: #f0a54a; --line: #3a2f25; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font: 13px/1.4 system-ui, sans-serif; overflow: hidden; }
+#bar { position: fixed; left: 10px; top: 10px; right: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+button { background: #2a211a; color: var(--ink); border: 1px solid var(--line); border-radius: 5px; padding: 4px 8px; font: inherit; }
+button.on { background: var(--acc); color: #1b1208; }
+#msg { color: var(--dim); }
+input[type=range] { accent-color: var(--acc); }
+</style>
+</head>
+<body>
+<!-- A host scene of its own (a floor, its own lights, a box), with the three dolls added from embed/ct68_carolers.js.
+     The page's own three.js is used: the bundle brings none. Here three.js is an ES module, so this page needs a web
+     server (see EMBED.md); in a page that loads three.js as a classic script (as the Darkride does) the same calls
+     work from the disk. -->
+<div id="bar">
+  <b>CT68.B1.Doll embed example</b>
+  <button id="sing" class="on">Sing</button><button id="talk">Talk</button><button id="spin">Spin 360°</button>
+  <button id="blow">Blow out candles</button>
+  <label>Flame level <input type="range" id="level" min="0" max="3" step="0.05" value="1"></label>
+  <button id="midi">Connect MIDI</button>
+  <span id="msg">Loading…</span>
+</div>
+<script src="ct68_carolers.js"></script>
+<script>
+  if (location.protocol === 'file:') document.getElementById('msg').textContent =
+    'This example loads three.js as an ES module, so open it through a web server (see EMBED.md). The bundle itself works from the disk.';
+</script>
+<script type="importmap">{ "imports": { "three": "../lib/three.module.js" } }</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from '../lib/OrbitControls.js';
+const $ = id => document.getElementById(id);
+
+// ---- the host's own scene ----
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+renderer.shadowMap.enabled = true;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+document.body.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#08070a');
+const camera = new THREE.PerspectiveCamera(40, 1, 0.05, 100);
+camera.position.set(-1.6, 1.4, 4.2);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0.6, 0.35, -0.5); controls.update();
+const ambient = new THREE.HemisphereLight('#606878', '#20160e', 0.8);
+const spot = new THREE.SpotLight('#ffe0c0', 14, 0, 0.5, 0.6, 1.2);
+spot.position.set(-1, 4, 3); spot.target.position.set(0.6, 0, -0.5); spot.castShadow = true;
+scene.add(ambient, spot, spot.target);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshStandardMaterial({ color: '#2a2018', roughness: 0.9 }));
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+const box = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), new THREE.MeshStandardMaterial({ color: '#4a6070' }));
+box.position.set(-1.4, 0.3, -1); box.castShadow = true; scene.add(box);
+
+// ---- the dolls ----
+// roomLights: the host's lights that go dark with the candles. scale 0.8: the dolls a little smaller than in CT68.
+const carolers = await CT68Carolers.create(THREE, { roomLights: [ambient, spot], scale: 0.8, singing: true });
+carolers.group.position.set(0.6, 0, -0.5);     // where they stand in the host's world
+carolers.group.rotation.y = -0.2;
+scene.add(carolers.group);
+$('msg').textContent = `${carolers.VERSION} loaded: ${carolers.rigs.map(r => r.doll.title).join(', ')}`;
+
+// ---- the buttons ----
+const syncButtons = () => { $('sing').classList.toggle('on', carolers.singing); $('talk').classList.toggle('on', carolers.talking); };
+$('sing').onclick = () => { carolers.sing(); syncButtons(); };
+$('talk').onclick = () => { carolers.talk(); syncButtons(); };
+$('spin').onclick = () => carolers.spin360();
+$('blow').onclick = () => carolers.blowOut();
+$('level').oninput = e => carolers.setFlameLevel(+e.target.value);
+// MIDI: the dolls' own CC map (CC 20.. for the pose, 29 sing, 35 talk, 37 flame level, 38 blow out; see EMBED.md)
+$('midi').onclick = async () => {
+  try {
+    const midi = await navigator.requestMIDIAccess();
+    for (const input of midi.inputs.values()) input.onmidimessage = ev => { carolers.handleMIDI(ev.data); syncButtons(); };
+    $('midi').textContent = `MIDI: ${midi.inputs.size} input(s)`;
+  } catch (e) { $('midi').textContent = 'No MIDI'; }
+};
+
+// ---- the loop ----
+function resize() { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
+addEventListener('resize', resize); resize();
+renderer.setAnimationLoop(now => {
+  carolers.update(now / 1000);
+  $('blow').classList.toggle('on', carolers.flamePhase !== 'lit');
+  controls.update();
+  renderer.render(scene, camera);
+});
+window.carolers = carolers;   // for testing from the console
+</script>
+</body>
+</html>

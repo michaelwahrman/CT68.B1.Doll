@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CT68.B1.Doll: putting the dolls in another page</title>
+<style>
+:root { --bg:#fbf8f3; --ink:#2a211a; --dim:#6b5a48; --line:#e0d6c8; --code:#f1ebe2; --acc:#a85a14; }
+@media (prefers-color-scheme: dark) { :root { --bg:#14100c; --ink:#eadfce; --dim:#a8987f; --line:#3a2f25; --code:#221a14; --acc:#f0a54a; } }
+body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.55 system-ui, sans-serif; }
+main { max-width:860px; margin:0 auto; padding:24px 16px 60px; }
+h1 { font-size:28px; margin:0 0 12px; } h2 { font-size:20px; margin:32px 0 10px; border-bottom:1px solid var(--line); padding-bottom:4px; }
+h3 { font-size:16px; } a { color:var(--acc); }
+code { background:var(--code); padding:1px 4px; border-radius:4px; font:13px ui-monospace, Consolas, monospace; }
+pre { background:var(--code); padding:10px 12px; border-radius:6px; overflow:auto; } pre code { padding:0; background:none; }
+table { border-collapse:collapse; margin:10px 0; display:block; overflow-x:auto; } th, td { border:1px solid var(--line); padding:4px 8px; text-align:left; vertical-align:top; }
+th { background:var(--code); } li { margin:3px 0; }
+</style></head><body><main>
+<h1>CT68.B1.Doll: putting the dolls in another page</h1>
+<p>The three caroler dolls can go into any three.js page, such as the Darkride (CT61). Everything they need is in one file, <code>embed/ct68_carolers.js</code>, about 1.6 MB:</p>
+<ul><li>
+the rig;
+</li><li>
+the singing, talking and blinking;
+</li><li>
+the candles, with the blow-out and the flame level;
+</li><li>
+the noise and the MIDI map;
+</li><li>
+the dolls' textures.
+</li></ul>
+<p>It is a classic script, like every file of the Darkride. It uses the page's own three.js, so there is only one copy of three.js and the dolls share the page's renderer and scene. It works from the disk with no server.</p>
+<h2>In the Darkride, step by step</h2>
+<ol><li>
+Copy <code>CT68.B1.Doll\embed\ct68_carolers.js</code> into the Darkride folder, for example as <code>CT61.Bx.Darkride_lib/ct68_carolers.js</code>.
+</li><li>
+In <code>index.html</code>, load it after three.js:
+<pre><code>&lt;script src=&quot;CT61.B5.Darkride_lib/three.r186.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;CT61.B5.Darkride_lib/ct68_carolers.js&quot;&gt;&lt;/script&gt;</code></pre>
+</li><li>
+Where the scene is built, make the dolls and place them:
+<pre><code>const carolers = await CT68Carolers.create(THREE, {
+  scale: 1,                      // 1: about 1 unit tall, standing on y = 0; the row is 1.6 wide
+  roomLights: [hemi, keyLight],  // the lights that go dark when the candles are blown out
+  singing: true,                 // start singing
+});
+carolers.group.position.set(x, y, z);   // where they stand in the ride
+carolers.group.rotation.y = angle;      // they face +Z in their own space
+scene.add(carolers.group);</code></pre>
+<p><code>create</code> returns a Promise because the textures are decoded first, which takes a fraction of a second. If the code is not <code>async</code>, use <code>CT68Carolers.create(…).then(c =&gt; { … })</code>.</p>
+</li><li>
+In the render loop, before <code>renderer.render</code>, call <code>carolers.update(seconds)</code>. Use any clock that runs forward in seconds: <code>performance.now() / 1000</code>, or the ride's own time, so that a recording made in non-real time stays smooth.
+</li><li>
+Connect the controls to the Darkride's MIDI and buttons. Either:
+<ul><li>
+call the actions from the ride's own MIDI layer: <code>carolers.sing()</code>, <code>carolers.blowOut()</code>, <code>carolers.setFlameLevel(v)</code>, <code>carolers.setControl01(&#x27;headTurn&#x27;, value / 127)</code>; or
+</li><li>
+pass the raw messages on: <code>carolers.handleMIDI(ev.data)</code> uses the dolls' own CC map (below).
+</li></ul>
+</li></ol>
+<h2>The API</h2>
+<p><code>CT68Carolers.create(THREE, options)</code> gives back <code>carolers</code>. You can also call <code>CT68Carolers.create(options)</code> to use the page's global <code>THREE</code>.</p>
+<p><b>Options</b> (all optional):</p>
+<table><thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead><tbody><tr><td><code>scale</code></td><td>1</td><td>the size of the dolls; the candle lights' reach and brightness scale with it</td></tr><tr><td><code>lights</code></td><td>true</td><td>each candle has a point light (in <code>carolers.group</code>); false: only the visible flames</td></tr><tr><td><code>roomLights</code></td><td>[]</td><td>your lights to dim with the candles. Their intensity when you pass them is taken as full.</td></tr><tr><td><code>singing</code> / <code>talking</code></td><td>false</td><td>start singing or talking</td></tr><tr><td><code>autoBlink</code></td><td>true</td><td>a blink every 8 to 20 seconds</td></tr><tr><td><code>flameLevel</code></td><td>1</td><td>0 to 3</td></tr><tr><td><code>hair</code></td><td>the A6 style</td><td><code>{ line: &#x27;back&#x27;, thick: 0.55, opacity: 0.6 }</code></td></tr><tr><td><code>noise</code></td><td>none</td><td>a list of Perlin-noise channels, <code>{ part, axis, amp, oct, mult, seed }</code> (see <code>OFFSETS</code>)</td></tr><tr><td><code>blowout</code></td><td>see below</td><td>timings, in seconds: <code>{ flicker: 1.6, die: 0.45, dark: 4, relight: 1.3, stagger: 0.22, darkness: 0.04 }</code></td></tr><tr><td><code>midiMap</code></td><td>the defaults</td><td>a change to the CC map, for example <code>{ blowOut: 60 }</code></td></tr><tr><td><code>baseUrl</code></td><td>—</td><td>load the dolls from a <code>dolls/</code> folder over http, instead of the packed data</td></tr></tbody></table>
+<p>**What <code>carolers</code> has:**</p>
+<table><thead><tr><th>Member</th><th>What it does</th></tr></thead><tbody><tr><td><code>group</code></td><td>the dolls and their candle lights: add it to your scene, move and turn it</td></tr><tr><td><code>update(seconds)</code></td><td>call once a frame; returns the room light, 0..1</td></tr><tr><td><code>setPose({ headTurn, headNod, armRaise, eyeX, eyeY, mouthOpen, mouthShape, sway, spin, blink }, now?)</code></td><td>the pose of all three, eased over about 0.06 s (<code>now = true</code> jumps there). The ranges are in <code>CONTROLS</code>.</td></tr><tr><td><code>setControl01(key, u)</code></td><td>one control from 0..1, as from a fader</td></tr><tr><td><code>resetPose()</code></td><td>back to rest</td></tr><tr><td><code>sing(on?)</code>, <code>talk(on?)</code></td><td>with no argument, on or off by turns; returns the new state. <code>singing</code> and <code>talking</code> read it.</td></tr><tr><td><code>spin360()</code>, <code>blink()</code>, <code>setAutoBlink(on)</code></td><td></td></tr><tr><td><code>blowOut({ dark }?)</code></td><td>the flames flicker, go out, stay dark for <code>dark</code> seconds (default 4), then light again; false if they are already out</td></tr><tr><td><code>relight()</code></td><td>light them now</td></tr><tr><td><code>setFlameLevel(v)</code>, <code>flameLevel</code></td><td>0 to 3, 1 is normal: the flames' size (√level) and their light (level)</td></tr><tr><td><code>flamePhase</code></td><td><code>&#x27;lit&#x27;</code>, <code>&#x27;flicker&#x27;</code>, <code>&#x27;dying&#x27;</code>, <code>&#x27;dark&#x27;</code> or <code>&#x27;relight&#x27;</code></td></tr><tr><td><code>roomLight</code></td><td>0..1: how lit the room should be now. Use it for lights you did not pass in <code>roomLights</code>, or for fog, sky or exposure.</td></tr><tr><td><code>addRoomLight(light)</code></td><td>dim another light with the candles</td></tr><tr><td><code>setHair(h)</code>, <code>setNoise(channels, on)</code></td><td></td></tr><tr><td><code>handleCC(cc, value)</code>, <code>handleMIDI(data)</code></td><td>the dolls' own MIDI map; returns true if the CC was theirs</td></tr><tr><td><code>on((type, detail) =&gt; …)</code></td><td>events: <code>&#x27;sing&#x27;</code>, <code>&#x27;talk&#x27;</code>, <code>&#x27;blowout&#x27;</code>, <code>&#x27;spinEnd&#x27;</code>; returns a function that stops listening</td></tr><tr><td><code>rigs</code>, <code>candles</code>, <code>performer</code>, <code>shown</code>, <code>target</code></td><td>the parts, for anything more</td></tr><tr><td><code>dispose()</code></td><td>takes the dolls out and frees their geometry and textures</td></tr></tbody></table>
+<p><code>CT68Carolers</code> also has the following, for building your own UI or map:</p>
+<ul><li>
+<code>VERSION</code>, <code>CONTROLS</code>, <code>TRIGGERS</code>, <code>LEVELS</code>, <code>MIDI_DEFAULTS</code>, <code>BLOWOUT</code>;
+</li><li>
+the lower-level <code>buildDoll</code>, <code>Candles</code> and <code>Performer</code>.
+</li></ul>
+<h2>The dolls' MIDI map (<code>handleCC</code>)</h2>
+<table><thead><tr><th>CC</th><th>What</th></tr></thead><tbody><tr><td>20</td><td>Head turn</td></tr><tr><td>21</td><td>Head nod</td></tr><tr><td>22</td><td>Raise candle arm</td></tr><tr><td>23</td><td>Eyes left/right</td></tr><tr><td>24</td><td>Eyes up/down</td></tr><tr><td>25</td><td>Mouth open</td></tr><tr><td>26</td><td>Mouth shape</td></tr><tr><td>27</td><td>Body sway</td></tr><tr><td>28</td><td>Spin</td></tr><tr><td>32</td><td>Eyelids</td></tr><tr><td>37</td><td>Flame level (0 → 3)</td></tr><tr><td>29</td><td>Sing (button)</td></tr><tr><td>30</td><td>Spin 360° (button)</td></tr><tr><td>33</td><td>Blink (button)</td></tr><tr><td>34</td><td>Auto blink (button)</td></tr><tr><td>35</td><td>Talk (button)</td></tr><tr><td>36</td><td>Noise (button)</td></tr><tr><td>38</td><td>Blow out candles (button)</td></tr></tbody></table>
+<p>Pose controls take values 0 → 127 across their range. A button presses when its CC goes from below 64 to 64 or more. CC 31 (record) belongs to the CT68 page and does nothing here.</p>
+<h2>Notes for the host</h2>
+<ul><li>
+<b>Size and place:</b> the dolls are about 1 unit tall, standing on y = 0 and facing +Z. The middle doll is at x = 0, and the outer two are at x = ±0.8, turned in by 14°.
+</li><li>
+<b>Lights:</b>
+<ul><li>
+The dolls use <code>MeshStandardMaterial</code>, so they need light. In a dark ride, a spot on them plus the candles looks right.
+</li><li>
+The candle lights are three <code>PointLight</code>s. Only the middle one casts shadows.
+</li><li>
+If the host has many lights already, <code>lights: false</code> drops the candle lights and keeps the flames.
+</li></ul>
+</li><li>
+<b>Darkness:</b>
+<ul><li>
+While the candles are out, only the lights in <code>roomLights</code> are dimmed. Use <code>roomLight</code> for anything else.
+</li><li>
+The room never goes below <code>blowout.darkness</code> (4%). Set it to 0 for full black.
+</li></ul>
+</li><li>
+<b>Shadows:</b> the dolls cast and receive shadows if the renderer has <code>shadowMap.enabled</code>.
+</li><li>
+<b>Tone:</b> CT68 uses <code>ACESFilmicToneMapping</code> at exposure 1.1. The textures are sRGB.
+</li><li>
+<b>three.js:</b> made with r180, and it uses only plain APIs. The Darkride's r186 should work, but the dolls have not been tried in the Darkride itself.
+</li><li>
+<b>Several sets:</b> each <code>create</code> makes an independent set with its own candles and timing.
+</li></ul>
+<h2>Other ways in</h2>
+<ul><li>
+<b>An ES-module page served over http:</b> <code>import { createCarolers } from &#x27;./CT68.B1.Doll/src/carolers.js&#x27;</code>, then <code>await createCarolers(THREE)</code>. It loads the dolls from <code>CT68.B1.Doll/dolls/</code> (or <code>baseUrl</code>).
+</li><li>
+<b>The example:</b> <code>embed/example.html</code> is a host scene with the dolls added, scaled to 0.8 and placed. It has buttons for sing, talk, spin, blow out and flame level, and MIDI. It loads three.js as an ES module, so open it through a server: run the <code>ct68-a7</code> launch entry, or <code>python -m http.server 8788</code> in <code>CT68.B1.Doll</code>, then open <a href="http://127.0.0.1:8788/embed/example.html.">http://127.0.0.1:8788/embed/example.html.</a>
+</li><li>
+<b>Rebuilding:</b> run <code>node build.mjs</code> in <code>CT68.B1.Doll</code> after changing <code>src/doll_rig.js</code>, <code>src/carolers.js</code> or a doll.
+</li></ul>
+</main></body></html>

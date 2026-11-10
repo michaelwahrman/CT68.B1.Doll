@@ -1,0 +1,57 @@
+{
+  "name": "blonde",
+  "title": "Blonde patchwork (caroler 1)",
+  "prompt": "Bisque caroler doll with big amber-brown glass eyes, painted brows, fair curly hair, a gathered lace bonnet over a dark brim, a brown grosgrain bow, a faded patchwork dress with lace collar, holding a tall candle in a black iron candlestick.",
+  "image": "../../ref/caroler_1.png",
+  "params": {
+    "hair": "curly",
+    "hairColor": "#b48a5a",
+    "bonnetColor": "#b07a48",
+    "dressColor": "#9a6a4a",
+    "ribbonColor": "#7a3a1e",
+    "holder": true,
+    "dressRepeat": [
+      3,
+      2
+    ],
+    "height": 1.0
+  },
+  "skin": "#9e5326",
+  "iris": "#7a4220",
+  "eyes": [
+    {
+      "x": -0.4336,
+      "y": 0.0558,
+      "w": 0.1683,
+      "h": 0.1304
+    },
+    {
+      "x": 0.4336,
+      "y": 0.0558,
+      "w": 0.1683,
+      "h": 0.1304
+    }
+  ],
+  "mouth": {
+    "x": 0.0,
+    "y": -0.49,
+    "w": 0.14
+  },
+  "nose": {
+    "x": 0.0,
+    "y": -0.2
+  },
+  "textures": {
+    "face": "tex/face.jpg",
+    "faceMask": "tex/face_mask.png",
+    "eye": "tex/eye.jpg",
+    "dress": "tex/dress.jpg",
+    "sleeve": "tex/sleeve.jpg",
+    "lace": "tex/lace.jpg",
+    "bonnet": "tex/bonnet.jpg",
+    "hair": "tex/hair.jpg",
+    "ribbon": "tex/ribbon.jpg",
+    "candle": "tex/candle.jpg",
+    "holder": "tex/holder.jpg"
+  }
+}
